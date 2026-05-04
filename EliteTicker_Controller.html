@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EliteTicker — Controller</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    --bg: #07090d;
+    --surface: rgba(18, 24, 38, 0.85);
+    --border: rgba(255,255,255,0.07);
+    --accent: #38bdf8;
+    --accent-dim: rgba(56,189,248,0.15);
+    --text: #e2e8f0;
+    --dim: #475569;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --mono: 'Space Mono', monospace;
+    --display: 'Barlow Condensed', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: var(--display);
+    background: var(--bg);
+    background-image:
+        radial-gradient(ellipse 80% 60% at 70% -10%, rgba(56,189,248,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 100%, rgba(56,189,248,0.04) 0%, transparent 60%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 60px;
+}
+
+.container { width: 100%; max-width: 460px; }
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+.logo { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.5px; line-height: 1; }
+.logo em { font-style: normal; color: var(--accent); }
+
+#bleBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 9px 18px;
+    border-radius: 100px;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(10px);
+}
+#bleBtn:hover { border-color: var(--accent); color: var(--text); }
+#bleBtn.connected { background: var(--success); border-color: var(--success); color: #07090d; }
+#bleBtn.connected .dot { background: #07090d; }
+#bleBtn.error { border-color: var(--danger); color: var(--danger); }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.dot.pulse { background: var(--success); animation: pulse 1.4s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(14px);
+}
+
+.sport-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.sport-tab {
+    flex: 1; padding: 11px 0; border-radius: 11px;
+    border: 1px solid var(--border); background: transparent;
+    color: var(--dim); font-family: var(--display); font-weight: 900;
+    font-size: 1rem; letter-spacing: 0.5px; cursor: pointer; transition: all 0.15s;
+}
+.sport-tab:hover { border-color: var(--accent); color: var(--text); }
+.sport-tab.active { background: var(--accent); border-color: var(--accent); color: #07090d; }
+
+.status-bar {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 0.68rem; color: var(--dim);
+    margin-top: 4px; min-height: 18px;
+}
+.status-bar .indicator { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); flex-shrink: 0; }
+.status-bar.ok .indicator { background: var(--success); }
+.status-bar.warn .indicator { background: var(--warning); }
+.status-bar.err .indicator { background: var(--danger); }
+.status-bar.ok { color: var(--text); }
+.status-bar.err { color: var(--danger); }
+
+#gameList { display: flex; flex-direction: column; gap: 12px; }
+
+.game-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px; padding: 18px 20px;
+    display: grid; grid-template-columns: 1fr 90px 1fr;
+    align-items: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    backdrop-filter: blur(10px); user-select: none;
+}
+.game-card:hover { border-color: rgba(56,189,248,0.35); }
+.game-card.selected {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(56,189,248,0.08) 0%, var(--surface) 100%);
+}
+
+.team { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.team-abbr { font-family: var(--display); font-weight: 900; font-size: 0.75rem; letter-spacing: 1px; color: var(--dim); }
+.team-score { font-family: var(--mono); font-size: 2rem; font-weight: 700; color: var(--text); line-height: 1; }
+
+.center-col { text-align: center; }
+.status-pill {
+    display: inline-block; font-family: var(--display); font-weight: 700;
+    font-size: 0.6rem; letter-spacing: 1px; color: var(--accent);
+    background: var(--accent-dim); padding: 3px 9px; border-radius: 100px;
+}
+.status-pill.live { background: rgba(239,68,68,0.15); color: var(--danger); }
+.status-pill.final { background: rgba(71,85,105,0.3); color: var(--dim); }
+.countdown { display: block; font-family: var(--mono); font-size: 0.65rem; color: var(--warning); margin-top: 6px; }
+.game-period { display: block; font-family: var(--mono); font-size: 0.6rem; color: var(--dim); margin-top: 4px; }
+.state-msg { text-align: center; padding: 40px 20px; color: var(--dim); font-family: var(--mono); font-size: 0.8rem; }
+
+#toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent); color: #07090d;
+    font-family: var(--display); font-weight: 700; font-size: 0.85rem;
+    padding: 10px 22px; border-radius: 100px; pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+    opacity: 0; white-space: nowrap;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="logo">ELITE<em>TICKER</em></div>
+        <button id="bleBtn"><span class="dot" id="dot"></span><span id="bleTxt">CONNECT</span></button>
+    </div>
+
+    <div class="panel">
+        <div class="sport-tabs">
+            <button class="sport-tab active" data-sport="mlb">MLB</button>
+            <button class="sport-tab" data-sport="nba">NBA</button>
+            <button class="sport-tab" data-sport="nfl">NFL</button>
+        </div>
+        <div class="status-bar" id="statusBar">
+            <span class="indicator"></span>
+            <span id="statusMsg">Standby — not connected</span>
+        </div>
+    </div>
+
+    <div id="gameList"></div>
+</div>
+<div id="toast"></div>
+
+<script>
+const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
+const CHAR_UUID    = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
+
+let characteristic = null, bleDevice = null;
+let sendBusy = false, lastPayload = '', txFailCount = 0;
+
+const bleBtn = document.getElementById('bleBtn');
+
+function setBleState(s) {
+    bleBtn.className = s === 'connected' ? 'connected' : s === 'error' ? 'error' : '';
+    document.getElementById('dot').className = s === 'connected' ? 'dot pulse' : 'dot';
+    document.getElementById('bleTxt').textContent =
+        s === 'connected' ? 'CONNECTED' : s === 'error' ? 'FAILED' : 'CONNECT';
+}
+
+bleBtn.onclick = async () => {
+    if (!navigator.bluetooth) { setStatus('Web Bluetooth not supported.', 'err'); return; }
+    try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+            filters: [{ name: 'ESP32-Sports-Ticker' }],
+            optionalServices: [SERVICE_UUID]
+        });
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+        const server  = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        characteristic = await service.getCharacteristic(CHAR_UUID);
+        setBleState('connected');
+        lastPayload = '';
+        setStatus('Connected — tap a game to sync it.', 'ok');
+        toast('Connected to display');
+    } catch {
+        setBleState('error');
+        setStatus('Bluetooth connection failed.', 'err');
+        setTimeout(() => setBleState('idle'), 2500);
+    }
+};
+
+function onDisconnected() {
+    characteristic = null;
+    setBleState('idle');
+    setStatus('Disconnected. Tap CONNECT to reconnect.', 'warn');
+    lastPayload = '';
+    toast('Display disconnected');
+}
+
+async function transmit(obj) {
+    if (!characteristic) return;
+    const payload = JSON.stringify(obj);
+    if (payload === lastPayload || sendBusy) return;
+    sendBusy = true;
+    try {
+        const enc = new TextEncoder().encode(payload);
+        if (enc.length > 512) { setStatus('Payload too large.', 'warn'); return; }
+        await characteristic.writeValue(enc);
+        lastPayload = payload;
+        txFailCount = 0;
+        setStatus(`Synced: ${obj.away} ${obj.scoreA} – ${obj.home} ${obj.scoreH}`, 'ok');
+    } catch {
+        if (++txFailCount >= 3) onDisconnected();
+        else setStatus('Transmit error — retrying...', 'warn');
+    } finally { sendBusy = false; }
+}
+
+function setStatus(msg, level = '') {
+    document.getElementById('statusBar').className = 'status-bar ' + level;
+    document.getElementById('statusMsg').textContent = msg;
+}
+
+let toastTimer = null;
+function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// Sport tabs
+const SPORT_MAP = { mlb: 'baseball/mlb', nba: 'basketball/nba', nfl: 'football/nfl' };
+let currentSport = 'mlb', allGames = [], selectedGameId = null;
+
+document.querySelectorAll('.sport-tab').forEach(tab => {
+    tab.onclick = () => {
+        document.querySelectorAll('.sport-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentSport = tab.dataset.sport;
+        selectedGameId = null;
+        lastPayload = '';
+        loadGames();
+    };
+});
+
+function getCountdownMs(d) { return new Date(d) - Date.now(); }
+
+function fmtCountdown(ms) {
+    if (ms <= 0) return null;
+    const h = Math.floor(ms / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+}
+
+// Safe score: only trust ESPN score values for live/final games.
+// Pre-game scores from ESPN can be stale, garbage, or non-zero — always show 0.
+function safeScore(competitor, gameState) {
+    if (gameState === 'pre') return '0';
+    const s = competitor.score;
+    if (s === null || s === undefined || s === '') return '0';
+    return String(s);
+}
+
+// Display score: show dash for pre-game on the card, real value otherwise
+function displayScore(competitor, gameState) {
+    if (gameState === 'pre') return '–';
+    const s = competitor.score;
+    if (s === null || s === undefined || s === '') return '0';
+    return String(s);
+}
+
+async function loadGames() {
+    document.getElementById('gameList').innerHTML = '<div class="state-msg">Loading...</div>';
+    try {
+        const res = await fetch(
+            `https://site.api.espn.com/apis/site/v2/sports/${SPORT_MAP[currentSport]}/scoreboard`,
+            { cache: 'no-store' }
+        );
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        allGames = data.events || [];
+        allGames.length
+            ? renderGames()
+            : (document.getElementById('gameList').innerHTML = '<div class="state-msg">No games today.</div>');
+    } catch {
+        document.getElementById('gameList').innerHTML =
+            '<div class="state-msg" style="color:var(--danger)">Failed to load scores.</div>';
+        setStatus('Score fetch failed — will retry.', 'err');
+    }
+}
+
+function renderGames() {
+    const list = document.getElementById('gameList');
+    list.innerHTML = '';
+    allGames.forEach(g => {
+        const comp  = g.competitions[0];
+        const home  = comp.competitors.find(c => c.homeAway === 'home');
+        const away  = comp.competitors.find(c => c.homeAway === 'away');
+        const state = g.status.type?.state;   // 'pre' | 'in' | 'post'
+        const clock = (state !== 'pre') ? (g.status.type?.shortDetail || null) : null;
+
+        let label, pillClass, extra;
+        if (state === 'pre') {
+            label = 'UPCOMING'; pillClass = '';
+            const fmt = fmtCountdown(getCountdownMs(g.date));
+            extra = fmt ? `<span class="countdown">T− ${fmt}</span>` : '';
+        } else if (state === 'in') {
+            label = 'LIVE'; pillClass = 'live';
+            extra = clock ? `<span class="game-period">${clock}</span>` : '';
+        } else {
+            label = 'FINAL'; pillClass = 'final'; extra = '';
+        }
+
+        const card = document.createElement('div');
+        card.className = `game-card${g.id === selectedGameId ? ' selected' : ''}`;
+        card.innerHTML = `
+            <div class="team">
+                <span class="team-abbr">${away.team.abbreviation}</span>
+                <span class="team-score">${displayScore(away, state)}</span>
+            </div>
+            <div class="center-col">
+                <span class="status-pill ${pillClass}">${label}</span>
+                ${extra}
+            </div>
+            <div class="team">
+                <span class="team-abbr">${home.team.abbreviation}</span>
+                <span class="team-score">${displayScore(home, state)}</span>
+            </div>
+        `;
+        card.onclick = () => {
+            if (g.id === selectedGameId) {
+                selectedGameId = null;
+                lastPayload = '';
+                setStatus('Game deselected — display idle.', 'warn');
+                renderGames();
+            } else {
+                selectedGameId = g.id;
+                renderGames();
+                syncSelected();
+            }
+        };
+        list.appendChild(card);
+    });
+}
+
+function syncSelected() {
+    if (!selectedGameId) return;
+    const g = allGames.find(g => g.id === selectedGameId);
+    if (!g) return;
+
+    const comp  = g.competitions[0];
+    const home  = comp.competitors.find(c => c.homeAway === 'home');
+    const away  = comp.competitors.find(c => c.homeAway === 'away');
+    const state = g.status.type?.state;
+
+    let statusStr;
+    if (state === 'pre') {
+        const fmt = fmtCountdown(getCountdownMs(g.date));
+        statusStr = fmt ? `T-${fmt}` : 'UPCOMING';
+    } else {
+        statusStr = (g.status.type?.shortDetail || (state === 'post' ? 'FINAL' : 'LIVE')).toUpperCase();
+    }
+
+    transmit({
+        mode:   'sports',
+        away:   away.team.abbreviation,
+        scoreA: safeScore(away, state),   // always "0" for pre-game
+        home:   home.team.abbreviation,
+        scoreH: safeScore(home, state),   // always "0" for pre-game
+        status: statusStr.substring(0, 20)
+    });
+}
+
+// Main loop — UI redraws every second, ESPN fetch every 30s
+let secondTick = 0;
+setInterval(() => {
+    secondTick++;
+    if (allGames.length) renderGames();
+    syncSelected();
+    if (secondTick % 30 === 0) loadGames();
+}, 1000);
+
+loadGames();
+</script>
+</body>
+</html>
