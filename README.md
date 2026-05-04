@@ -1,0 +1,1 @@
+This is the cpntroller for the elite ticker device. Make sure the device is charged and showing "Waiting for BT" on the screen. Click the connect button, select the device, and then choose pair. Now, you can click games to show them on the screen. There will be a green dot on the top right hand corner if the device is connected, and it will be red if it is not connected.
